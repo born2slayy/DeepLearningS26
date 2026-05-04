@@ -1,14 +1,15 @@
 # Feel free to change the imports according to your implementation and needs
 import argparse
 import os
+
 import torch
 import torchvision.transforms.v2 as v2
 
-from torchvision.models import resnet18
-from assignment_1_code.models.class_model import DeepClassifier
-from assignment_1_code.metrics import Accuracy
 from assignment_1_code.datasets.cifar10 import CIFAR10Dataset
 from assignment_1_code.datasets.dataset import Subset
+from assignment_1_code.metrics import Accuracy
+from assignment_1_code.models.class_model import DeepClassifier
+from assignment_1_code.models.vit import ViT
 from config import DATA_DIR, MODEL_SAVE_DIR
 
 
@@ -29,9 +30,15 @@ def test(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     num_test_data = len(test_data)
 
-    net = resnet18(weights=None)
-    net.fc = torch.nn.Linear(net.fc.in_features, test_data.num_classes())
-    model = DeepClassifier(net)
+    model = DeepClassifier(
+        ViT(
+            patch_size=4,
+            emb_size=128,
+            depth=6,
+            num_heads=8,
+            n_classes=test_data.num_classes(),
+        )
+    )
     model.load(args.path_to_trained_model)
     model.to(device)
 
@@ -59,7 +66,7 @@ def test(args):
 
 
 if __name__ == "__main__":
-    args = argparse.ArgumentParser(description="Training")
+    args = argparse.ArgumentParser(description="Testing")
     args.add_argument(
         "-d", "--gpu_id", default="0", type=str, help="index of which GPU to use"
     )
@@ -68,6 +75,6 @@ if __name__ == "__main__":
         args = args.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
     args.gpu_id = 0
-    args.path_to_trained_model = str(MODEL_SAVE_DIR / "ResNet_model_best.pth")
+    args.path_to_trained_model = str(MODEL_SAVE_DIR / "ViT_model_best.pth")
 
     test(args)

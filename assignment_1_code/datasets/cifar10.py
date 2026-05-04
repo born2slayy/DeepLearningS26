@@ -1,7 +1,7 @@
 import pickle
+import os
 from typing import Tuple
 import numpy as np
-import os
 
 
 from assignment_1_code.datasets.dataset import Subset, ClassificationDataset
@@ -54,54 +54,42 @@ class CIFAR10Dataset(ClassificationDataset):
         numpy array with dtype int64.
         """
 
-        # TODO implement
-        # See the CIFAR-10 website on how to load the data files
-        def unpickle(file):
-            with open(file, 'rb') as fo:
-                dict = pickle.load(fo, encoding='bytes')
-            return dict
+        if not os.path.isdir(self.fdir):
+            raise ValueError(f"{self.fdir} is not a directory")
 
         if self.subset == Subset.TRAINING:
-            files = [f"data_batch_{i}" for i in range(1, 5)]
+            batch_names = ("data_batch_1", "data_batch_2", "data_batch_3", "data_batch_4")
         elif self.subset == Subset.VALIDATION:
-            files = ["data_batch_5"]
+            batch_names = ("data_batch_5",)
         elif self.subset == Subset.TEST:
-            files = ["test_batch"]
+            batch_names = ("test_batch",)
         else:
-            raise ValueError("Unknown subset")
+            raise ValueError(f"Unsupported subset: {self.subset}")
 
-        all_images = []
-        all_labels = []
+        batch_data = []
+        batch_labels = []
 
-        for file_name in files:
-            file_path = os.path.join(self.fdir, file_name)
-            if not os.path.exists(file_path):
-                raise ValueError(f"File not found: {file_path}")
-            
-            entry = unpickle(file_path)
-            all_images.append(entry[b'data'])
-            all_labels.extend(entry[b'labels'])
+        for batch_name in batch_names:
+            batch_path = os.path.join(self.fdir, batch_name)
+            if not os.path.isfile(batch_path):
+                raise ValueError(f"Missing CIFAR-10 batch file: {batch_path}")
 
-        # CIFAR-10: (N, 3072) -> R(1024), G(1024), B(1024) 
-        images = np.concatenate(all_images, axis=0)
-        
-        # (N, 3, 32, 32) reshape -> (N, 32, 32, 3)transpose
-        images = images.reshape(-1, 3, 32, 32).transpose(0, 2, 3, 1)
-        
-        # data type (uint8)
-        images = images.astype(np.uint8)
-        
-        # labels to int64 numpy array
-        labels = np.array(all_labels, dtype=np.int64)
-        
+            with open(batch_path, "rb") as f:
+                batch = pickle.load(f, encoding="bytes")
+
+            batch_data.append(batch[b"data"])
+            batch_labels.extend(batch[b"labels"])
+
+        images = np.concatenate(batch_data, axis=0)
+        images = images.reshape(-1, 3, 32, 32).transpose(0, 2, 3, 1).astype(np.uint8)
+        labels = np.asarray(batch_labels, dtype=np.int64)
         return images, labels
 
     def __len__(self) -> int:
         """
         Returns the number of samples in the dataset.
         """
-        # TODO implement
-        return len(self.images)
+        return len(self.labels)
 
     def __getitem__(self, idx: int) -> Tuple:
         """
@@ -110,14 +98,12 @@ class CIFAR10Dataset(ClassificationDataset):
         Applies transforms if not None.
         Raises IndexError if the index is out of bounds.
         """
-        # TODO implement
-        if idx >= len(self):
+        if idx < 0 or idx >= len(self):
             raise IndexError("Index out of bounds")
 
         image = self.images[idx]
-        label = self.labels[idx]
+        label = int(self.labels[idx])
 
-        # transform is not none (v2.ToImage(), v2.ToDtype)
         if self.transform is not None:
             image = self.transform(image)
 
@@ -127,5 +113,4 @@ class CIFAR10Dataset(ClassificationDataset):
         """
         Returns the number of classes.
         """
-        # TODO implement
         return len(self.classes)

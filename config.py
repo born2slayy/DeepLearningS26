@@ -7,8 +7,7 @@ Students should adapt these paths to their local setup.
 from pathlib import Path
 
 # Path to extracted CIFAR-10 python files (directory containing data_batch_1 ... test_batch)
-# DATA_DIR = Path("C:/Users/ganks/Downloads/Deeplearnings26/dlvc-ss26/cifar-10-batches-py")
-DATA_DIR = Path("/caa/Student/dlvc/public/datasets/cifar10")
+DATA_DIR = Path("cifar-10-batches-py")
 
 # Optional logging directory (for wandb/tensorboard/custom logs)
 LOG_DIR = Path("logs")

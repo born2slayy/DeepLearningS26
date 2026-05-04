@@ -1,15 +1,17 @@
 # Feel free to change the imports according to your implementation and needs
 import argparse
 import os
-import torch
-import torchvision.transforms.v2 as v2
 from pathlib import Path
 
-from assignment_1_code.models.class_model import DeepClassifier
-from assignment_1_code.metrics import Accuracy
-from assignment_1_code.trainer import ImgClassificationTrainer
+import torch
+import torchvision.transforms.v2 as v2
+
 from assignment_1_code.datasets.cifar10 import CIFAR10Dataset
 from assignment_1_code.datasets.dataset import Subset
+from assignment_1_code.metrics import Accuracy
+from assignment_1_code.models.class_model import DeepClassifier
+from assignment_1_code.models.vit import ViT
+from assignment_1_code.trainer import ImgClassificationTrainer
 from config import DATA_DIR, MODEL_SAVE_DIR
 
 
@@ -35,14 +37,19 @@ def train(args):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    from torchvision.models import resnet18
-
-    net = resnet18(weights=None)
-    net.fc = torch.nn.Linear(net.fc.in_features, train_data.num_classes())
-    model = DeepClassifier(net)
+    model = DeepClassifier(
+        ViT(
+            patch_size=4,
+            emb_size=128,
+            depth=6,
+            num_heads=8,
+            n_classes=train_data.num_classes(),
+        )
+    )
     model.to(device)
+
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=0.001, amsgrad=True, weight_decay=0.05
+        model.parameters(), lr=0.001, amsgrad=True, weight_decay=0.01
     )
     loss_fn = torch.nn.CrossEntropyLoss()
 
@@ -69,6 +76,7 @@ def train(args):
         model_save_dir,
         batch_size=128,
         val_frequency=val_frequency,
+        run_name="vit_baseline",
     )
     trainer.train()
 
