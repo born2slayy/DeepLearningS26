@@ -14,6 +14,10 @@ from config import DATA_DIR, MODEL_SAVE_DIR
 
 
 def train(args):
+    # Run notes:
+    # 1. baseline: default transforms, AdamW(lr=0.001, amsgrad=True, weight_decay=0.01)
+    # 2. augmentation: baseline + RandomCrop(32, padding=4) + RandomHorizontalFlip(0.5)
+    # 3. stronger regularization: default transforms, weight_decay=0.05
     train_transform = v2.Compose(
         [
             v2.ToImage(),

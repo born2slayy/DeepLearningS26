@@ -15,6 +15,9 @@ from config import DATA_DIR, MODEL_SAVE_DIR
 
 
 def train(args):
+    # Run notes:
+    # 1. baseline: default transforms, AdamW(lr=0.001, amsgrad=True, weight_decay=0.01)
+    # 2. final regularized run: same setup, but weight_decay=0.05
     train_transform = v2.Compose(
         [
             v2.ToImage(),
@@ -40,7 +43,7 @@ def train(args):
     model.to(device)
 
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=0.001, amsgrad=True, weight_decay=0.01
+        model.parameters(), lr=0.001, amsgrad=True, weight_decay=0.05
     )
     loss_fn = torch.nn.CrossEntropyLoss()
 
@@ -67,7 +70,7 @@ def train(args):
         model_save_dir,
         batch_size=128,
         val_frequency=val_frequency,
-        run_name="ourcnn_baseline",
+        run_name="ourcnn_wd005",
     )
     trainer.train()
 
